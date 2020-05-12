@@ -16,9 +16,15 @@ library(dplyr)
 ##################
 #1. Load files
 
-otu <- 'merged_otutab_V4.txt'
-map <- '/Users/brett/Documents/Temporal_turnover/Informatics/map_file16.txt'
-tax <- 'merged_otus_V3.sintax'
+# OTU analysis:
+# otu <- 'merged_otutab_V4.txt'
+# map <- '/Users/brett/Documents/Temporal_turnover/Informatics/map_file16.txt'
+# tax <- 'merged_otus_V3.sintax'
+
+# ZOTU (ASV or ESV) analysis:
+otu <- 'merged_zotutab_V3.txt'
+map <- 'map_file16.txt'
+tax <- 'merged_zotus_V3_rdp.sintax'
 
 full_otu <- read.delim(otu, header = TRUE, row.names = 1)
 full_tax <- read.delim(tax, header = FALSE, row.names = 1)
@@ -256,17 +262,16 @@ p1 + theme_classic() + xlab('Plants') + ylab('Richness') + scale_fill_discrete(n
   # I think I should be removing it from the analysis, but will think about it some more
 
 # Ordination
+sample_data(pseq_rare)$Month <- factor(sample_data(pseq_rare)$Month, levels = c('Apr', 'May', 'Jun', 'Jul',
+                                                                                'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
 
 p2 <- plot_ordination(pseq_rare, ordinate(pseq_rare, 'NMDS', distance = 'bray', trymax = 100), 'sites', color = 'Month') +
   stat_ellipse() + theme_classic()
 
 p2
-  # Need to organize the months as factors
 
 ## Taxonomy
 
-sample_data(pseq_rare)$Month <- factor(sample_data(pseq_rare)$Month, levels = c('Apr', 'May', 'Jun', 'Jul',
-                                                                                'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
 
 # rela = transform_sample_counts(plant3_rare, function(x) x/11050)
 # 
@@ -330,17 +335,17 @@ mocks_rare <- rarefy_even_depth(mocks, sample.size = 2970, replace = FALSE)
 
 # Okay, run a PERMANOVA and see if they're different
 
-mock_bray <- phyloseq::distance(mocks_rare, method = 'bray')
-mock_sam_df <- data.frame(sample_data(mocks_rare))
-adonis2(mock_bray ~ Month, data = mock_sam_df)
+# mock_bray <- phyloseq::distance(mocks_rare, method = 'bray')
+# mock_sam_df <- data.frame(sample_data(mocks_rare))
+# adonis2(mock_bray ~ Month, data = mock_sam_df)
 # This doesn't seem informative with only 3 Df
 # Try ordination?
 
-p_mock <- plot_ordination(mocks_rare, ordinate(mocks_rare, method = 'NMDS', 
-                                               distance = 'bray', trymax = 999), 
-                          'sites', color = 'Month') + stat_ellipse() + 
-  theme_classic()
-p_mock
+# p_mock <- plot_ordination(mocks_rare, ordinate(mocks_rare, method = 'NMDS', 
+#                                                distance = 'bray', trymax = 999), 
+#                           'sites', color = 'Month') + stat_ellipse() + 
+#   theme_classic()
+# p_mock
 
 # I think what I'll need to do is include all of the samples merged by plant
 # and add these mocks back in, then ordinate to see if they are indeed 
@@ -352,19 +357,19 @@ p_mock
 # Will try to observe differences between MCs between runs with 
 # stacked barplots
 
-rank_names(mocks_rare)
-colnames(tax_table(mocks_rare)) =c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
-
-mock_rel <- transform_sample_counts(mocks_rare, function(x) x/2970)
-mock_trim <- filter_taxa(mock_rel, function(x) mean(x) > 1e-2, TRUE)
-
-p3 <- plot_bar(mock_trim, "Family", fill = "Genus")
-p3 + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack") + 
-  ylab("Relative abundance") + facet_wrap(~ Month)
-theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
-      panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-colSums(otu_table(mocks_rare))
+# rank_names(mocks_rare)
+# colnames(tax_table(mocks_rare)) =c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+# 
+# mock_rel <- transform_sample_counts(mocks_rare, function(x) x/2970)
+# mock_trim <- filter_taxa(mock_rel, function(x) mean(x) > 1e-2, TRUE)
+# 
+# p3 <- plot_bar(mock_trim, "Family", fill = "Genus")
+# p3 + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack") + 
+#   ylab("Relative abundance") + facet_wrap(~ Month)
+# theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
+#       panel.background = element_blank(), axis.line = element_line(colour = "black"))
+# 
+# colSums(otu_table(mocks_rare))
 
 ### Merging the MC pseq object and the full dataset objects
 ## Will use pseq_merge3 from line 284 above
@@ -387,6 +392,35 @@ p2
 ## Still need to incorporate the within-plant analysis
 ## I think including the mock communities in ordination is the
   # way to go...
+
+### 2020-05-12
+## Import the zotu tables and compare to the OTU tables
+  # Going to hold off on the comparison for now
+  # Can run correlations between OTUs and ZOTUs of 
+    # alpha and beta diversity for each sample
+    # but don't need to do it right now
+
+## Processing the within-plant samples:
+
+# Not sure what to do about zotus/clustering. 
+  # Maybe just keep separate since they were collected and
+  # and sequenced separately
+
+wp_otu <- 'within_p_zotutab2.txt'
+wp_map <- 'within_p_map_file.txt'
+wp_tax <- 'within_p_zotus2.sintax.txt'
+
+wp_full_otu <- read.delim(wp_otu, header = TRUE, row.names = 1)
+wp_full_tax <- read.delim(wp_tax, header = FALSE, row.names = 1)
+wp_tax_mat <- as.matrix(wp_full_tax)
+
+wp_full_otu2 <- otu_table(wp_full_otu, taxa_are_rows = TRUE)
+wp_full_tax2 <- tax_table(wp_tax_mat)
+wp_full_map <- import_qiime_sample_data(wp_map)
+
+wp_pseq <- merge_phyloseq(wp_full_otu2, wp_full_tax2, wp_full_map)
+
+
 
 
 
