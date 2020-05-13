@@ -272,11 +272,6 @@ p2
 
 ## Taxonomy
 
-
-# rela = transform_sample_counts(plant3_rare, function(x) x/11050)
-# 
-# no_low = filter_taxa(rela, function(x) mean(x) > 1e-3, TRUE)
-
 rela = transform_sample_counts(pseq_rare, function(x) x/300000)
 
 no_low = filter_taxa(rela, function(x) mean(x) > 5e-5, TRUE)
@@ -408,7 +403,7 @@ p2
 
 wp_otu <- 'within_p_zotutab2.txt'
 wp_map <- 'within_p_map_file.txt'
-wp_tax <- 'within_p_zotus2.sintax.txt'
+wp_tax <- 'within_p_zotus3.sintax'
 
 wp_full_otu <- read.delim(wp_otu, header = TRUE, row.names = 1)
 wp_full_tax <- read.delim(wp_tax, header = FALSE, row.names = 1)
@@ -419,6 +414,117 @@ wp_full_tax2 <- tax_table(wp_tax_mat)
 wp_full_map <- import_qiime_sample_data(wp_map)
 
 wp_pseq <- merge_phyloseq(wp_full_otu2, wp_full_tax2, wp_full_map)
+
+rank_names(wp_pseq)
+
+colnames(tax_table(wp_pseq)) = c('Kingdom', 'Phylum', 'Class',
+                                 'Order', 'Family', 'Genus',
+                                 'Species')
+
+sort(sample_sums(wp_pseq))
+
+set.seed(777)
+
+wp_rare <- rarefy_even_depth(wp_pseq, sample.size = 5000, replace = FALSE)
+
+# Ordination:
+
+p1 <- plot_ordination(wp_rare, ordinate(wp_rare, 'RDA', distance = 'bray', trymax = 100), 
+                      'sites', color = 'Plant_compartment') + stat_ellipse() + theme_classic()
+
+p1
+
+# Rhizome is different, not much else
+library('PCDimension') # Use this for broken stick calcs
+  # Need to review based on the # of PC dimensions
+
+# Taxonomy plot
+wp_ra <- transform_sample_counts(wp_rare, function(x) x/20000)
+wp_filt <- filter_taxa(wp_ra, function(x) mean(x) > 2e-3, prune = TRUE)
+
+p2 <- plot_bar(wp_filt, 'Family', fill = 'Genus')
+p2 + geom_bar(aes(color = Genus, fill = Genus), stat = 'identity',
+              position = 'stack') + ylab('Relative abundance') + 
+  theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
+  panel.background = element_blank(), axis.line = 
+    element_line(colour = "black")) + 
+  facet_wrap(~ Plant_compartment, ncol = 3, nrow = 1)
+
+# Will adjust some more later
+
+tax_table(subset_taxa(wp_rare, Genus %in% 'Derxomyces'))
+
+# Alpha diversity plots with hill numbers
+
+wp_otu <- t(otu_table(wp_rare))
+hill <- renyi(wp_otu, scales = c(0,1,2), hill = TRUE)
+hill2 <- tibble::rownames_to_column(hill, 'SampleID')
+
+library(reshape2)
+library(plyr)
+
+hill2 <- melt(hill2, id.vars = 'SampleID')
+
+colnames(hill2) <- c('SampleID', 'Hill_number', 'Hill_value')
+
+hill2['Compartment'] <- as.factor(sub('(\\w+)\\.\\d\\.\\d', '\\1', hill2$SampleID))
+hill2['Compartment'] <- mapvalues(hill2$Compartment, from = c("Le", "Ra", "Rh"), 
+          to = c("Leaf", "Rachis", "Rhizome"))
+
+
+p3 <- ggplot(hill2, aes(x=Compartment, y=Hill_value, fill=Compartment)) +
+  geom_boxplot() + facet_grid(Hill_number ~., scales = 'free_y')
+p3
+
+## ggplot version of boxplots of Hill Numbers
+# # Rearrange the full Hill data
+# FullOTU <- otu_table(pt_rare)
+# Hillfull = renyi(FullOTU, scales = c(0,1,2), hill = T)
+# #write.table(Hillfull, file = "hillfull.txt", sep = "\t")
+# 
+# # Import the rearranged data:
+# Hillfull2 <- read.csv(file = "hillfull2.csv", header = TRUE, sep = ",")
+# 
+# # Adjust the factors
+# Hillfull2$Month <- factor(Hillfull2$Month, levels = c("Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan"))
+# #levels(Hillfull2$q.value)[levels(Hillfull2$q.value)=="Hill_0"] <- "q = 0"
+# #levels(Hillfull2$q.value)[levels(Hillfull2$q.value)=="Hill_1"] <- "q = 1"
+# #levels(Hillfull2$q.value)[levels(Hillfull2$q.value)=="Hill_2"] <- "q = 2"
+# 
+# # The base plot
+# h <- hillplot <- ggplot(Hillfull2, aes(x=Month, y=Hill.Number, fill=Month)) +
+#   geom_boxplot() + facet_grid(q.value ~., scales = "free_y")
+# h
+# # Change the y-axis labels ?
+# h <- hillplot <- ggplot(Hillfull2, aes(x=Month, y=Hill.Number, color=Month)) +
+#   geom_boxplot() + facet_grid(q.value ~., scales = "free_y", switch = "y",
+#                               labeller = as_labeller(c(Hill_0 = "Richness (OTUs)", Hill_1 = "Exp. Shannon Entropy", 
+#                                                        Hill_2 = "Inv. Simpson Index"))) +
+#   ylab(NULL) + theme(strip.background = element_blank(), strip.placement = "outside",
+#                      strip.text = element_text(size = 12), axis.title = element_text(size = 12), 
+#                      axis.text = element_text(size = 12, colour = "black"), legend.position = "none")
+# h
+# # Saved as Hill2.pdf
+# 
+# ### Stats on Hill numbers
+# 
+# # Separate by Hill number
+# Hillzero <- dplyr::filter(Hillfull2, q.value == "Hill_0")
+# Hillone <- dplyr::filter(Hillfull2, q.value == "Hill_1")
+# Hilltwo <- dplyr::filter(Hillfull2, q.value == "Hill_2")
+# 
+# # Repeated measures anova: https://www.gribblelab.org/stats/notes/RepeatedMeasuresANOVA.pdf
+# anzero <- aov(Hill.Number ~ Month + Error(Plant/Month), data = Hillzero)
+# summary(anzero)
+# 
+# anone <- aov(Hill.Number ~ Month + Error(Plant/Month), data = Hillone)
+# summary(anone)
+# 
+# antwo <- aov(Hill.Number ~ Month + Error(Plant/Month), data = Hilltwo)
+# summary(antwo)
+# 
+# plot(TukeyHSD(aov(Hillzero$Hill.Number~Hillzero$Month)), las = 1)
+
 
 
 
