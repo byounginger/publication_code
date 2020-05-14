@@ -447,12 +447,14 @@ p2 + geom_bar(aes(color = Genus, fill = Genus), stat = 'identity',
               position = 'stack') + ylab('Relative abundance') + 
   theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
   panel.background = element_blank(), axis.line = 
-    element_line(colour = "black")) + 
+    element_line(colour = "black"), legend.position = 'none') + 
   facet_wrap(~ Plant_compartment, ncol = 3, nrow = 1)
 
 # Will adjust some more later
 
 tax_table(subset_taxa(wp_rare, Genus %in% 'Derxomyces'))
+tax_table(subset_taxa(wp_rare, Genus %in% 'Tremella'))
+tax_table(subset_taxa(wp_rare, Genus %in% 'Hymenoscyphus'))
 
 # Alpha diversity plots with hill numbers
 
@@ -476,21 +478,12 @@ p3 <- ggplot(hill2, aes(x=Compartment, y=Hill_value, fill=Compartment)) +
   geom_boxplot() + facet_grid(Hill_number ~., scales = 'free_y')
 p3
 
-## ggplot version of boxplots of Hill Numbers
-# # Rearrange the full Hill data
-# FullOTU <- otu_table(pt_rare)
-# Hillfull = renyi(FullOTU, scales = c(0,1,2), hill = T)
-# #write.table(Hillfull, file = "hillfull.txt", sep = "\t")
-# 
-# # Import the rearranged data:
-# Hillfull2 <- read.csv(file = "hillfull2.csv", header = TRUE, sep = ",")
-# 
-# # Adjust the factors
-# Hillfull2$Month <- factor(Hillfull2$Month, levels = c("Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan"))
-# #levels(Hillfull2$q.value)[levels(Hillfull2$q.value)=="Hill_0"] <- "q = 0"
-# #levels(Hillfull2$q.value)[levels(Hillfull2$q.value)=="Hill_1"] <- "q = 1"
-# #levels(Hillfull2$q.value)[levels(Hillfull2$q.value)=="Hill_2"] <- "q = 2"
-# 
+# Stats
+hill_num2 <- subset(hill2, Hill_number == 0)
+hill_an2 <- aov(Hill_value ~ Compartment, data = hill_num2)
+summary(hill_an2)
+plot(TukeyHSD(aov(hill_num2$Hill_value~hill_num2$Compartment)))
+
 # # The base plot
 # h <- hillplot <- ggplot(Hillfull2, aes(x=Month, y=Hill.Number, fill=Month)) +
 #   geom_boxplot() + facet_grid(q.value ~., scales = "free_y")
