@@ -14,6 +14,17 @@ library(ggplot2)
 library(dplyr)
 
 ##################
+
+### Figure height-width variables for Ecology (ESA)
+prop = 5/7      
+s_w = 3.00
+s_h = s_w*prop
+h_w = 4.50
+h_h = h_w*prop
+d_w = 6.00
+d_h = d_w*prop
+### Figure height-width variables for Ecology (ESA)
+
 #1. Load files
 
 # OTU analysis:
@@ -24,7 +35,7 @@ library(dplyr)
 # ZOTU (ASV or ESV) analysis:
 otu <- 'merged_zotutab_V3.txt'
 map <- 'map_file16.txt'
-tax <- 'merged_zotus_V3_rdp.sintax'
+tax <- 'merged_zotus_V4_rdp.sintax'
 
 full_otu <- read.delim(otu, header = TRUE, row.names = 1)
 full_tax <- read.delim(tax, header = FALSE, row.names = 1)
@@ -36,7 +47,7 @@ full_map <- import_qiime_sample_data(map)
 
 pseq <- merge_phyloseq(full_otu2, full_tax2, full_map)
 
-apr_may <- subset_samples(pseq, Month == 'April' | Month == 'May') # '|' is 'or'
+apr_may <- subset_samples(pseq, Month == 'April' | Month == 'May')
 
 jun_jul <- subset_samples(pseq, Month == 'June' | Month == 'July')
 
@@ -125,7 +136,7 @@ dj_new <- merge_phyloseq(dj_clean, dj_tax, dj_sam)
 
 pseq_clean <- merge_phyloseq(am_new, jj_new, as_new, on_new, dj_new)
 
-sample_sums(pseq_clean)
+sort(sample_sums(pseq_clean))
 
 rank_names(pseq_clean)
 colnames(tax_table(pseq_clean)) =c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
@@ -155,13 +166,14 @@ mer_otu <- otu_table(pseq_merge)
 pseq_merge2 <- merge_phyloseq(mer_otu, mer_tax, sam_mer)
 head(sample_data(pseq_merge2))
 
-sam_sums <- sample_sums(pseq_merge2)
-sort(sam_sums)
+sort(sample_sums(pseq_merge2))
 
 ## Remove some spurious OTUs, potential contaminants? 
 
 pseq_merge3 <- prune_taxa(taxa_sums(pseq_merge2) > 1, pseq_merge2) # Maybe adjust this later? 
-pseq_merge3 <- subset_taxa(pseq_merge3, Genus != 'Candida')
+# pseq_merge3 <- subset_taxa(pseq_merge3, Genus != 'Candida') # Going to hold off on this for now
+
+sort(sample_sums(pseq_merge3))
 
 ## Good for now. Will come back and clean more after visualizing some 
 # taxonomic plots
@@ -171,7 +183,7 @@ pseq_rare <- rarefy_even_depth(pseq_merge3, sample.size = 15000, replace = FALSE
 
 # Plot some rarefaction curves
 
-APR <- subset_samples(pseq_rare, Month == 'Apr')
+#APR <- subset_samples(pseq_rare, Month == 'Apr')
 MAY <- subset_samples(pseq_rare, Month == 'May')
 JUN <- subset_samples(pseq_rare, Month == 'Jun')
 JUL <- subset_samples(pseq_rare, Month == 'Jul')
@@ -182,7 +194,7 @@ NOV <- subset_samples(pseq_rare, Month == 'Nov')
 DEC <- subset_samples(pseq_rare, Month == 'Dec')
 JAN <- subset_samples(pseq_rare, Month == 'Jan')
 
-APR <- prune_taxa(taxa_sums(APR) > 0, APR)
+#APR <- prune_taxa(taxa_sums(APR) > 0, APR)
 MAY <- prune_taxa(taxa_sums(MAY) > 0, MAY)
 JUN <- prune_taxa(taxa_sums(JUN) > 0, JUN)
 JUL <- prune_taxa(taxa_sums(JUL) > 0, JUL)
@@ -193,7 +205,7 @@ NOV <- prune_taxa(taxa_sums(NOV) > 0, NOV)
 DEC <- prune_taxa(taxa_sums(DEC) > 0, DEC)
 JAN <- prune_taxa(taxa_sums(JAN) > 0, JAN)
 
-Apr_otu <- as.data.frame(otu_table(APR))
+#Apr_otu <- as.data.frame(otu_table(APR))
 May_otu <- as.data.frame(otu_table(MAY))
 Jun_otu <- as.data.frame(otu_table(JUN))
 Jul_otu <- as.data.frame(otu_table(JUL))
@@ -204,7 +216,7 @@ Nov_otu <- as.data.frame(otu_table(NOV))
 Dec_otu <- as.data.frame(otu_table(DEC))
 Jan_otu <- as.data.frame(otu_table(JAN))
 
-Apr_otu_sac <- specaccum(Apr_otu, permutations = 999, method = 'rarefaction')
+#Apr_otu_sac <- specaccum(Apr_otu, permutations = 999, method = 'rarefaction')
 May_otu_sac <- specaccum(May_otu, permutations = 999, method = 'rarefaction')
 Jun_otu_sac <- specaccum(Jun_otu, permutations = 999, method = 'rarefaction')
 Jul_otu_sac <- specaccum(Jul_otu, permutations = 999, method = 'rarefaction')
@@ -215,7 +227,7 @@ Nov_otu_sac <- specaccum(Nov_otu, permutations = 999, method = 'rarefaction')
 Dec_otu_sac <- specaccum(Dec_otu, permutations = 999, method = 'rarefaction')
 Jan_otu_sac <- specaccum(Jan_otu, permutations = 999, method = 'rarefaction')
 
-Apr_otu_sac_df <- data.frame(Apr_otu_sac$sites, Apr_otu_sac$richness, Apr_otu_sac$sd)
+#Apr_otu_sac_df <- data.frame(Apr_otu_sac$sites, Apr_otu_sac$richness, Apr_otu_sac$sd)
 May_otu_sac_df <- data.frame(May_otu_sac$sites, May_otu_sac$richness, May_otu_sac$sd)
 Jun_otu_sac_df <- data.frame(Jun_otu_sac$sites, Jun_otu_sac$richness, Jun_otu_sac$sd)
 Jul_otu_sac_df <- data.frame(Jul_otu_sac$sites, Jul_otu_sac$richness, Jul_otu_sac$sd)
@@ -228,7 +240,7 @@ Jan_otu_sac_df <- data.frame(Jan_otu_sac$sites, Jan_otu_sac$richness, Jan_otu_sa
 
 colids <- c('plant', 'richness', 'sd')
 
-colnames(Apr_otu_sac_df) <- colids
+#colnames(Apr_otu_sac_df) <- colids
 colnames(May_otu_sac_df) <- colids
 colnames(Jun_otu_sac_df) <- colids
 colnames(Jul_otu_sac_df) <- colids
@@ -239,7 +251,7 @@ colnames(Nov_otu_sac_df) <- colids
 colnames(Dec_otu_sac_df) <- colids
 colnames(Jan_otu_sac_df) <- colids
 
-Apr_otu_sac_df$month <- 'Apr'
+#Apr_otu_sac_df$month <- 'Apr'
 May_otu_sac_df$month <- 'May'
 Jun_otu_sac_df$month <- 'Jun'
 Jul_otu_sac_df$month <- 'Jul'
@@ -250,25 +262,40 @@ Nov_otu_sac_df$month <- 'Nov'
 Dec_otu_sac_df$month <- 'Dec'
 Jan_otu_sac_df$month <- 'Jan'
 
-full_curve <- rbind(Apr_otu_sac_df, May_otu_sac_df, Jun_otu_sac_df, Jul_otu_sac_df, Aug_otu_sac_df, Sep_otu_sac_df, Oct_otu_sac_df, Nov_otu_sac_df, Dec_otu_sac_df, Jan_otu_sac_df)
+#full_curve <- rbind(Apr_otu_sac_df, May_otu_sac_df, Jun_otu_sac_df, Jul_otu_sac_df, Aug_otu_sac_df, Sep_otu_sac_df, Oct_otu_sac_df, Nov_otu_sac_df, Dec_otu_sac_df, Jan_otu_sac_df)
+full_curve <- rbind(May_otu_sac_df, Jun_otu_sac_df, Jul_otu_sac_df, Aug_otu_sac_df, Sep_otu_sac_df, Oct_otu_sac_df, Nov_otu_sac_df, Dec_otu_sac_df, Jan_otu_sac_df)
 
-full_curve$month <- factor(full_curve$month, levels = c('Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
+full_curve$month <- factor(full_curve$month, levels = c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
 
 p1 <- ggplot(full_curve, aes(x = plant, y = richness, colour = month)) + geom_line() + xlim(1,20)
-p1 + theme_classic() + xlab('Plants') + ylab('Richness') + scale_fill_discrete(name = 'Months')
+p1 + theme_classic() + xlab('Plants') + ylab('Richness') +
+  theme(legend.key.height = unit(0.1, 'in')) + scale_color_discrete('Months')
+
+ggsave('../R/Figures/rare_v1.pdf', width = s_w, height = s_h, units = 'in')
 
 # Think instead I should set the xlim to 1 # Will work on this further at a later point
 # Also, April is really the outlier due to low sample sizes.
   # I think I should be removing it from the analysis, but will think about it some more
 
 # Ordination
-sample_data(pseq_rare)$Month <- factor(sample_data(pseq_rare)$Month, levels = c('Apr', 'May', 'Jun', 'Jul',
-                                                                                'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
 
-p2 <- plot_ordination(pseq_rare, ordinate(pseq_rare, 'NMDS', distance = 'bray', trymax = 100), 'sites', color = 'Month') +
+pseq_rare_noApr <- subset_samples(pseq_rare, Month != 'Apr')
+
+sample_data(pseq_rare_noApr)$Month <- factor(sample_data(pseq_rare_noApr)$Month, 
+                                       levels = c('May', 'Jun', 'Jul','Aug', 'Sep', 
+                                                  'Oct', 'Nov', 'Dec', 'Jan'))
+
+# sample_data(pseq_rare)$Month <- factor(sample_data(pseq_rare)$Month, 
+#                                        levels = c('Apr', 'May', 'Jun', 'Jul','Aug', 'Sep', 
+#                                                   'Oct', 'Nov', 'Dec', 'Jan'))
+
+p2 <- plot_ordination(pseq_rare_noApr, ordinate(pseq_rare_noApr, 'NMDS', distance = 'bray', trymax = 100), 
+                      'sites', color = 'Month', title = 'Stress = 0.15') +
   stat_ellipse() + theme_classic()
 
 p2
+
+ggsave('../R/Figures/ord_v1.pdf', width = d_w, height = d_h, units = 'in')
 
 ## Taxonomy
 
@@ -324,9 +351,9 @@ mock_sams <- sample_data(mock_sams)
 mock_otus <- otu_table(otu_cont2, taxa_are_rows = TRUE)
 mocks <- merge_phyloseq(mock_otus, mock_sams, full_tax2)
 
-sample_sums(mocks)
-set.seed(777)
-mocks_rare <- rarefy_even_depth(mocks, sample.size = 2970, replace = FALSE)
+# sample_sums(mocks)
+# set.seed(777)
+# mocks_rare <- rarefy_even_depth(mocks, sample.size = 2970, replace = FALSE)
 
 # Okay, run a PERMANOVA and see if they're different
 
@@ -373,14 +400,25 @@ pseq_merge_mocks <- merge_phyloseq(pseq_merge3, mocks)
 
 sample_data(pseq_merge_mocks)[201:204,2] <- 'mock'
 
+pseq_merge_mocks <- subset_samples(pseq_merge_mocks, Month != 'Apr')
+
+sample_data(pseq_merge_mocks)$Month <- factor(sample_data(pseq_merge_mocks)$Month, levels = 
+                                                c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov',
+                                                  'Dec', 'Jan', 'mock'))
+
+sort(sample_sums(pseq_merge_mocks))
+
 set.seed(777)
-pseq_mocks_rare <- rarefy_even_depth(pseq_merge_mocks, sample.size = 2970, 
+pseq_mocks_rare <- rarefy_even_depth(pseq_merge_mocks, sample.size = 2996, 
                                      replace = FALSE)
 
-p2 <- plot_ordination(pseq_mocks_rare, ordinate(pseq_mocks_rare, 'NMDS', distance = 'bray', trymax = 100), 'sites', color = 'Month') +
+p3 <- plot_ordination(pseq_mocks_rare, ordinate(pseq_mocks_rare, 'NMDS', distance = 'bray', trymax = 100), 
+                      'sites', color = 'Month', title = 'Stress = 0.11') +
   stat_ellipse() + theme_classic()
 
-p2
+p3 
+
+ggsave('../R/Figures/ord_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
 
 ### 2020/05/08
 ## Working on getting everything organized and analyzed again 
