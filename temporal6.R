@@ -3,7 +3,6 @@
 setwd('/Users/brett/Documents/Temporal_turnover/Informatics')
 
 # library(biom)
-# library(dplyr)
 # library(ggbiplot)
 # library(MASS)
 library(phyloseq)
@@ -12,6 +11,8 @@ library(vegan)
 # library(gridExtra)
 library(ggplot2)
 library(dplyr)
+library(reshape2)
+library(plyr)
 
 ##################
 
@@ -299,15 +300,15 @@ ggsave('../R/Figures/ord_v1.pdf', width = d_w, height = d_h, units = 'in')
 
 ## Taxonomy
 
-rela = transform_sample_counts(pseq_rare, function(x) x/300000)
-
-no_low = filter_taxa(rela, function(x) mean(x) > 5e-5, TRUE)
-
-p3 <- plot_bar(no_low, "Family", fill = "Genus")
-p3 + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack") + 
-  facet_wrap( ~ Month, ncol = 5, nrow = 2) + ylab("Relative abundance") +
-  theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+# rela = transform_sample_counts(pseq_rare, function(x) x/300000)
+# 
+# no_low = filter_taxa(rela, function(x) mean(x) > 5e-5, TRUE)
+# 
+# p3 <- plot_bar(no_low, "Family", fill = "Genus")
+# p3 + geom_bar(aes(color=Genus, fill=Genus), stat="identity", position="stack") + 
+#   facet_wrap( ~ Month, ncol = 5, nrow = 2) + ylab("Relative abundance") +
+#   theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
+#         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 # Will need to revise the tax table to reflect the new taxonomy of the genus
 # and other taxonomic classifications
 
@@ -500,8 +501,8 @@ wp_otu <- t(otu_table(wp_rare))
 hill <- renyi(wp_otu, scales = c(0,1,2), hill = TRUE)
 hill2 <- tibble::rownames_to_column(hill, 'SampleID')
 
-library(reshape2)
-library(plyr)
+# library(reshape2)
+# library(plyr)
 
 hill2 <- melt(hill2, id.vars = 'SampleID')
 
@@ -556,13 +557,69 @@ plot(TukeyHSD(aov(hill_num2$Hill_value~hill_num2$Compartment)))
 # 
 # plot(TukeyHSD(aov(Hillzero$Hill.Number~Hillzero$Month)), las = 1)
 
+# 2020-05-18
 
+# Alpha diversity plots
 
+pseq_rare_noApr = subset_samples((pseq_rare), Month != 'Apr')
+pseq_rare_noApr = prune_taxa(taxa_sums(pseq_rare_noApr) > 0, pseq_rare_noApr)
 
+pseq_rare_noApr_otu = otu_table(pseq_rare_noApr)
+hill <- renyi(pseq_rare_noApr_otu, scales = c(0,1,2), hill = TRUE)
+hill <- tibble::rownames_to_column(hill, 'SampleID')
 
+hill <- melt(hill, id.vars = 'SampleID')
+colnames(hill) = c('SampleID', 'Hill_number', 'Hill_value')
 
+hill$Plant <- as.factor(sub('(\\d+)\\.\\w+', '\\1', hill$SampleID))
+hill$Month <- as.factor(sub('\\d+\\.(\\w+)', '\\1', hill$SampleID))
+hill$Hill_number <- mapvalues(hill$Hill_number, from = c(0,1,2), 
+                              to = c('zero', 'one', 'two'))
 
+hill$Month <- factor(hill$Month, 
+                     levels = c('May', 'Jun', 'Jul', 'Aug', 'Sep', 
+                                'Oct', 'Nov', 'Dec', 'Jan'))
 
+p6 <- ggplot(hill, aes(x = Month, y = Hill_value, fill = Month)) + 
+  geom_boxplot() + facet_grid(Hill_number ~., scales = 'free_y', 
+                              labeller = as_labeller(c('zero'='Richness (OTUs)', 
+                                                       'one'= 'Exp. Shannon\n Entropy', 
+                                                       'two'='Inv. Simpson\n Index'))) +
+  theme_classic() + 
+  theme(legend.position = 'none', axis.text = element_text(size = 12, color = 'black'), 
+        strip.text = element_text(size = 10), axis.title = element_text(size = 12), 
+        axis.line = element_line(color = 'black'))
 
+p6
 
+ggsave('../R/Figures/hill_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+# The above is the supplemental figure
 
+hill2 <- subset(hill, Hill_number == 'zero')
+
+p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot() + 
+  theme_classic() + theme(legend.position = 'none', 
+                          axis.text = element_text(color = 'black')) + 
+  ylab('Richness (OTUs)')
+
+p7
+
+ggsave('../R/Figures/hill_v1.pdf', width = s_w, height = s_h, units = 'in')
+
+## Taxonomy revised
+
+ntaxa(pseq_rare_noApr)
+nsamples(pseq_rare_noApr)
+sample_sums(pseq_rare_noApr)
+20*15000
+
+pseq_rel <- transform_sample_counts(pseq_rare_noApr, function(x) x/3e+05)
+sample_sums(pseq_rel)
+
+p8 <- plot_bar(pseq_rel, x = 'Family', y = 'Abundance', fill = 'Genus')
+
+p8 + geom_bar(aes(fill = 'Genus', color = 'Genus'), stat = 'identity', 
+           position = 'stack') + theme(legend.position = 'none') + 
+  facet_wrap(.~Month, nrow = 3)
+
+p8
