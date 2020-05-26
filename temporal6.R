@@ -615,11 +615,38 @@ sample_sums(pseq_rare_noApr)
 
 pseq_rel <- transform_sample_counts(pseq_rare_noApr, function(x) x/3e+05)
 sample_sums(pseq_rel)
+0.05*20
 
-p8 <- plot_bar(pseq_rel, x = 'Family', y = 'Abundance', fill = 'Genus')
+# Supplemental plot without filtering
 
-p8 + geom_bar(aes(fill = 'Genus', color = 'Genus'), stat = 'identity', 
-           position = 'stack') + theme(legend.position = 'none') + 
-  facet_wrap(.~Month, nrow = 3)
+p8 <- plot_bar(pseq_rel, x = 'Family', fill = 'Genus')
 
-p8
+p8 + geom_bar(aes(fill = Genus, color = Genus), stat = 'identity', 
+           position = 'stack') + facet_wrap(~Month, nrow = 3) + 
+  theme(legend.position = 'none', panel.background = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.line = element_line(color = 'black'), 
+        axis.ticks.x = element_blank()) + ylab('Relative abundance')
+
+ggsave('../R/Figures/tax_supp_V1.pdf', width = d_w, height = d_h, units = 'in')
+
+# MS plot with filtering
+
+pseq_rel_filt <- filter_taxa(pseq_rel, function(x) mean(x) > 2e-5, prune = TRUE)
+
+p9 <- plot_bar(pseq_rel_filt, x = 'Class', fill = 'Genus')
+
+p9 + geom_bar(aes(fill = Genus, color = Genus), stat = 'identity', 
+              position = 'stack') + facet_wrap(~Month, nrow = 3) + 
+  theme(panel.background = element_blank(), 
+        axis.line = element_line(color = 'black'), axis.text.x = 
+          element_text(angle = 45, vjust = 1.05, hjust = 1), 
+        axis.text = element_text(color = 'black'), legend.key.height = unit(0.1, 'in')) + 
+  ylab('Relative abundance')
+
+ggsave('../R/Figures/tax_V1.pdf', width = d_w, height = d_h, units = 'in')
+
+
+
+
+
