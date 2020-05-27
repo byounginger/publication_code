@@ -294,9 +294,34 @@ p2 <- plot_ordination(pseq_rare_noApr, ordinate(pseq_rare_noApr, 'NMDS', distanc
                       'sites', color = 'Month', title = 'Stress = 0.15') +
   stat_ellipse() + theme_classic()
 
-p2
+label1 <- c("PERMANOVA\nPseudo-F", "= 9.61 p < 0.001")
 
-ggsave('../R/Figures/ord_v1.pdf', width = d_w, height = d_h, units = 'in')
+p2 + annotate('text', x = -1.5, y = 2.4, hjust = 'left', 
+              label = expression(paste("Pseudo-",F['8,170']," = 9.61 p < 0.001"))) + 
+  annotate('text', x = -1.5, y = 2.6, hjust = 'left', label = "PERMANOVA") + 
+  annotate('text', x = -1.5, y = 2.0, hjust = 'left', label = "PERMDISP") + 
+  annotate('text', x = -1.5, y = 1.8, hjust = 'left',
+           label = expression(paste("Pseudo-",F['8,170']," = 33.33 p < 0.001")))
+
+## ggsave('../R/Figures/ord_v1.pdf', width = d_w, height = d_h, units = 'in')
+## ggsave('../R/Figures/ord_v2.pdf', width = d_w, height = d_h, units = 'in')
+
+## PERMANOVA
+
+perm1 <- phyloseq::distance(pseq_rare_noApr, method = 'bray')
+perm_df <- data.frame(sample_data(pseq_rare_noApr))
+
+beta <- betadisper(perm1, perm_df$Month)
+permutest(beta)
+
+# Think I want to constrain by plant and month, not just month
+# Try out all three iterations to see the results
+
+# adonis2(perm1 ~ Month, data = perm_df) # Difference between months
+# adonis2(perm1 ~ Month, strata = Month, data = perm_df) # Difference between months, constrained by month (doesn't make sense)
+adonis2(perm1 ~ Month, strata = Plant, data = perm_df) # Difference between months, constrained by plant
+# adonis2(perm1 ~ Month, strata = c(Plant, Month), data = perm_df)
+# adonis2(perm1 ~ Plant, strata = Month, data = perm_df) # Difference between plants, constrained by month
 
 ## Taxonomy
 
@@ -592,7 +617,7 @@ p6 <- ggplot(hill, aes(x = Month, y = Hill_value, fill = Month)) +
 
 p6
 
-ggsave('../R/Figures/hill_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+## ggsave('../R/Figures/hill_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
 # The above is the supplemental figure
 
 hill2 <- subset(hill, Hill_number == 'zero')
@@ -602,9 +627,53 @@ p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot
                           axis.text = element_text(color = 'black')) + 
   ylab('Richness (OTUs)')
 
-p7
+p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated-measures ANOVA', size = 3) + 
+  annotate('text', x = 3, y = 85, hjust = 'left', size = 3, 
+           label = expression(paste(F["8,144"]," = 103.5, p < 0.001")))
 
-ggsave('../R/Figures/hill_v1.pdf', width = s_w, height = s_h, units = 'in')
+## ggsave('../R/Figures/hill_v1.pdf', width = s_w, height = s_h, units = 'in')
+ggsave('../R/Figures/hill_v2.pdf', width = s_w, height = s_h, units = 'in')
+## Stats on alpha diversity
+
+hillaov <- aov(Hill_value ~ Month + Error(Plant/Month), data = hill2)
+  # Get an error: Error() model is singular
+    # This is likely because Jul only has 19 individuals
+      # Will drop this individual from the analysis
+
+summary(hillaov)
+jul_only <- subset(hill2, Month == 'Jul')
+nrow(jul_only)
+jul_only # Plant 6 to remove
+
+no_six <- subset(hill2, Plant != 6)
+nrow(no_six)
+
+hillaov2 <- aov(Hill_value ~ Month + Error(Plant/Month), data = no_six)
+summary(hillaov2)
+# The above works, but don't think the homoscedasticity assumptions are met
+qqnorm(no_six$Hill_value)
+qqline(no_six$Hill_value)
+hist(no_six$Hill_value)
+bartlett.test(Hill_value~Month, data = no_six)
+no_six$log_val <- log(no_six$Hill_value)
+qqnorm(no_six$log_val)
+qqline(no_six$log_val)
+bartlett.test(log_val~Month, data = no_six)
+hist(no_six$log_val)
+# Dunno, think I should log transform and run repeated measures
+
+hillaov3 <- aov(log_val ~ Month + Error(Plant/Month), data = no_six)
+summary(hillaov3)
+
+Tuker <- TukeyHSD(aov(log_val ~ Month, data = no_six), las = 1)
+Tuker$Month
+# Compare with Kruskal:
+kruskal.test(Hill_value ~ Month, data = no_six)
+# Same result
+
+
+
+
 
 ## Taxonomy revised
 
