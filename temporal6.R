@@ -627,7 +627,7 @@ p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot
                           axis.text = element_text(color = 'black')) + 
   ylab('Richness (OTUs)')
 
-p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated-measures ANOVA', size = 3) + 
+p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated measures ANOVA', size = 3) + 
   annotate('text', x = 3, y = 85, hjust = 'left', size = 3, 
            label = expression(paste(F["8,144"]," = 103.5, p < 0.001")))
 
@@ -655,6 +655,7 @@ qqnorm(no_six$Hill_value)
 qqline(no_six$Hill_value)
 hist(no_six$Hill_value)
 bartlett.test(Hill_value~Month, data = no_six)
+
 no_six$log_val <- log(no_six$Hill_value)
 qqnorm(no_six$log_val)
 qqline(no_six$log_val)
@@ -667,13 +668,38 @@ summary(hillaov3)
 
 Tuker <- TukeyHSD(aov(log_val ~ Month, data = no_six), las = 1)
 Tuker$Month
+plot(TukeyHSD(aov(log_val ~ Month, data = no_six)), las = 1)
 # Compare with Kruskal:
 kruskal.test(Hill_value ~ Month, data = no_six)
 # Same result
 
+## Try and capture non-significant post-hoc values:
 
+Tuk2 <- Tuker$Month
+Tuk2 <- as.data.frame(Tuk2)
+Tuk2$p_adj <- Tuk2$`p adj`
+non_sig <- subset(Tuk2, p_adj >= 5e-2)
+non_sig
 
+## Redo of the plot with annotations:
+labels <- c(' A', ' A', ' B', ' C', ' C', ' D', 'D,B', 'D,B', ' D')
+x_locs <- c(1, 2, 3, 4, 5, 6, 7, 8, 9)
+tapply(hill2$Hill_value, hill2$Month, summary)  # Figure out the value of the upper quartile! 
+y_locs <- c(92.25, 91.50, 11.50, 7.00, 7.75, 27.50, 15.75, 20.75, 24.25)   
+h_just <- c(-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.1, -0.1, -0.5)
 
+p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot() + 
+  theme_classic() + theme(legend.position = 'none', 
+                          axis.text = element_text(color = 'black')) + 
+  ylab('Richness (OTUs)')
+
+p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated measures ANOVA', size = 3) + 
+  annotate('text', x = 3, y = 85, hjust = 'left', size = 3, 
+           label = expression(paste(F["8,144"]," = 103.5, p < 0.001"))) + 
+  annotate('text', x = x_locs, y = y_locs, label = labels, vjust = -0.5, 
+           hjust = h_just, size = 2)
+
+ggsave('../R/Figures/hill_v3.pdf', width = s_w, height = s_h, units = 'in')
 
 ## Taxonomy revised
 
