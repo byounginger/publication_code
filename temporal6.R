@@ -493,26 +493,32 @@ wp_rare <- rarefy_even_depth(wp_pseq, sample.size = 5000, replace = FALSE)
 
 # Ordination:
 
-p1 <- plot_ordination(wp_rare, ordinate(wp_rare, 'RDA', distance = 'bray', trymax = 100), 
+p1 <- plot_ordination(wp_rare, ordinate(wp_rare, 'PCoA', distance = 'bray', trymax = 100), 
                       'sites', color = 'Plant_compartment') + stat_ellipse() + theme_classic()
 
 p1
 
-# Rhizome is different, not much else
-library('PCDimension') # Use this for broken stick calcs
-  # Need to review based on the # of PC dimensions
+ggsave('../R/Figures/wp_ord_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+
+# # Rhizome is different, not much else
+# library('PCDimension') # Use this for broken stick calcs
+#   # Need to review based on the # of PC dimensions
 
 # Taxonomy plot
 wp_ra <- transform_sample_counts(wp_rare, function(x) x/20000)
-wp_filt <- filter_taxa(wp_ra, function(x) mean(x) > 2e-3, prune = TRUE)
+wp_filt <- filter_taxa(wp_ra, function(x) mean(x) > 1e-3, prune = TRUE)
 
-p2 <- plot_bar(wp_filt, 'Family', fill = 'Genus')
+p2 <- plot_bar(wp_filt, 'Class', fill = 'Genus')
 p2 + geom_bar(aes(color = Genus, fill = Genus), stat = 'identity',
               position = 'stack') + ylab('Relative abundance') + 
   theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
   panel.background = element_blank(), axis.line = 
-    element_line(colour = "black"), legend.position = 'none') + 
+    element_line(colour = "black"), legend.key.height = unit(0.1, 'in')) + 
   facet_wrap(~ Plant_compartment, ncol = 3, nrow = 1)
+
+ggsave('../R/Figures/wp_tax_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+
+
 
 # Will adjust some more later
 
@@ -686,9 +692,9 @@ labels <- c(' A', ' A', ' B', ' C', ' C', ' D', 'D,B', 'D,B', ' D')
 x_locs <- c(1, 2, 3, 4, 5, 6, 7, 8, 9)
 tapply(hill2$Hill_value, hill2$Month, summary)  # Figure out the value of the upper quartile! 
 y_locs <- c(92.25, 91.50, 11.50, 7.00, 7.75, 27.50, 15.75, 20.75, 24.25)   
-h_just <- c(-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.1, -0.1, -0.5)
+#h_just <- c(-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.1, -0.1, -0.5)
 
-p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot() + 
+p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot(outlier.size = 1) + 
   theme_classic() + theme(legend.position = 'none', 
                           axis.text = element_text(color = 'black')) + 
   ylab('Richness (OTUs)')
@@ -697,9 +703,10 @@ p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated measures
   annotate('text', x = 3, y = 85, hjust = 'left', size = 3, 
            label = expression(paste(F["8,144"]," = 103.5, p < 0.001"))) + 
   annotate('text', x = x_locs, y = y_locs, label = labels, vjust = -0.5, 
-           hjust = h_just, size = 2)
+           hjust = -0.1, size = 2)
 
-ggsave('../R/Figures/hill_v3.pdf', width = s_w, height = s_h, units = 'in')
+# ggsave('../R/Figures/hill_v3.pdf', width = s_w, height = s_h, units = 'in')
+ggsave('../R/Figures/hill_v4.pdf', width = s_w, height = s_h, units = 'in')
 
 ## Taxonomy revised
 
@@ -740,6 +747,31 @@ p9 + geom_bar(aes(fill = Genus, color = Genus), stat = 'identity',
   ylab('Relative abundance')
 
 ggsave('../R/Figures/tax_V1.pdf', width = d_w, height = d_h, units = 'in')
+
+## Gametophyte bioassay results
+
+gamete <- read.csv('../Gametophytes/Nov_time1.csv', header = T, sep = "\t")
+
+gamete$Sample_ID2 <- sub('(\\w+_\\d+)_\\d', '\\1', gamete$SampleID)
+
+gamete$SampleID[gamete$Sample_ID2 == 'BSY_163'] <- 'Flagellospora'
+gamete$SampleID[gamete$Sample_ID2 == 'BSY_137'] <- 'Plectania'
+gamete$SampleID[gamete$Sample_ID2 == 'Cont_1'] <- 'Control'
+gamete$SampleID[gamete$Sample_ID2 == 'Cont_2'] <- 'Control'
+
+p10 <- ggplot(gamete, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) + 
+  geom_boxplot() + facet_grid(~Time_elapsed) + 
+  theme(panel.background = element_blank(), axis.line = element_line(color = 'black'), 
+        axis.text = element_text(color = 'black', size = 6), legend.position = 'none', 
+        axis.title = element_text(size = 8)) +
+  geom_hline(yintercept = 0, alpha = 0.5) + xlab('Treatment group') + 
+  ylab(expression(paste(Delta,' Surface area ', (cm)^2)))
+
+p10
+
+# Need to finish adjusting and adding stats annotations
+
+ggsave('../R/Figures/gamete_V1.pdf', width = s_w, height = s_h, units = 'in')
 
 
 
