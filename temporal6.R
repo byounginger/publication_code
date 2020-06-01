@@ -823,12 +823,29 @@ dunn.test(week8$Nov_Time1, week8$SampleID, method = 'hochberg')
 
 f_labels <- data.frame(x = c(1, 1), y = c(-0.25, -0.25), 
                        Time_elapsed = c('4 weeks', '8 weeks'), 
-                       label = c('sample', 
-                                 'sample2'))
+                       label = c('chi^2(2) = 4.00, p = 0.136', 
+                                 'chi^2(2) = 17.11, p < 0.001'))
 
 # 'chi^2(2) = 4.00, p = 0.136'
 # 'chi^2(2) = 17.11, p < 0.001'
 gamete2 <- dplyr::left_join(gamete, f_labels, by = 'Time_elapsed')
+
+gamete2[31,7] <- 'sample2'
+
+gamete2 <- gamete
+gamete2[,5:7] <- NA
+newcols <- c("SampleID", "Nov_Time1", "Time_elapsed", "Sample_ID2", "X", "Y", "label")
+colnames(gamete2) = newcols
+gamete2[1,5] <- 1
+gamete2[31,5] <- 1
+gamete2[1,6] <- -0.25
+gamete2[31,6] <- -0.25
+gamete2[1,7] <- expression(paste('chi^2(2) = 4.00, p = 0.136'))
+gamete2[31,7] <- 'chi^2(2) = 17.11, p < 0.001'
+
+gamete2 <- gamete
+gamete2[31:60, 2] <- NA
+
 
 p10 <- ggplot(gamete2, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) + 
   geom_boxplot(outlier.size = 0.5) + facet_grid(.~Time_elapsed) + 
@@ -838,13 +855,19 @@ p10 <- ggplot(gamete2, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) +
         axis.title = element_text(size = 8)) +
   geom_hline(yintercept = 0, alpha = 0.5) + xlab('Treatment group') + 
   ylab(expression(paste(Delta,' Surface area ', (cm)^2))) + 
-  geom_text(data = gamete2, aes(x = x, y = y, label = label))
+  annotate('text', x = 1, y = -0.25, label = expression(paste(chi^2,'(2) = 4.00, p = 0.136')), hjust = 'left')
 
+# Okay, just use cowplot to get the separate plots together. Can I plot
+#   annotations after separately in the facets? Will have to see later. 
+
+# geom_text(data=my.avg, aes(x=1.5, y=7, label=paste("Avg ==", mean, "*m^2/ha")), parse=TRUE)
 # Got this to work, now to remove the overplotting that occurs! 
+  # Also reduce facet label size
+  # Get the expression values in
 
 p10
 
-ggsave('../R/Figures/gamete_V2.pdf', width = s_w, height = s_h, units = 'in')
+#ggsave('../R/Figures/gamete_V2.pdf', width = s_w, height = s_h, units = 'in')
 
 
 
