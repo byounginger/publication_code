@@ -13,6 +13,7 @@ library(ggplot2)
 library(dplyr)
 library(reshape2)
 library(plyr)
+library(dunn.test)
 
 ##################
 
@@ -759,21 +760,91 @@ gamete$SampleID[gamete$Sample_ID2 == 'BSY_137'] <- 'Plectania'
 gamete$SampleID[gamete$Sample_ID2 == 'Cont_1'] <- 'Control'
 gamete$SampleID[gamete$Sample_ID2 == 'Cont_2'] <- 'Control'
 
-p10 <- ggplot(gamete, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) + 
-  geom_boxplot() + facet_grid(~Time_elapsed) + 
+# p10 <- ggplot(gamete, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) + 
+#   geom_boxplot(outlier.size = 0.5) + facet_grid(~Time_elapsed) + 
+#   theme(panel.background = element_blank(), axis.line = element_line(color = 'black'), 
+#         axis.text = element_text(color = 'black', size = 6, angle = 30, vjust = 0, hjust = 1), 
+#         legend.position = 'none', 
+#         axis.title = element_text(size = 8)) +
+#   geom_hline(yintercept = 0, alpha = 0.5) + xlab('Treatment group') + 
+#   ylab(expression(paste(Delta,' Surface area ', (cm)^2)))
+# 
+# p10
+# 
+# # Need to finish adjusting and adding stats annotations
+# # ggsave('../R/Figures/gamete_V1.pdf', width = s_w, height = s_h, units = 'in')
+# ggsave('../R/Figures/gamete_V2.pdf', width = s_w, height = s_h, units = 'in')
+
+## Stats on the gametophytes
+
+week4 <- subset(gamete, Time_elapsed == '4 weeks')
+week8 <- subset(gamete, Time_elapsed == '8 weeks')
+
+hist(week4$Nov_Time1, breaks = 10)
+shapiro.test(week4$Nov_Time1)
+week4$sq_size <- week4$Nov_Time1^2
+hist(week4$sq_size, breaks = 10)
+week4$log_size <- log(week4$Nov_Time1 + 1)
+hist(week4$log_size, breaks = 20)
+shapiro.test(week4$log_size)
+
+week4$log10 <- log10(week4$Nov_Time1 + 1)
+hist(week4$log10)
+shapiro.test(week4$log10)
+qqnorm(week4$log10)
+qqline(week4$log10)
+
+qqnorm(week4$log_size)
+qqline(week4$log_size)
+
+week4$sqrt <- sqrt(week4$Nov_Time1 + 1)
+hist(week4$sqrt, breaks = 5)
+shapiro.test(week4$sqrt)
+
+hist(week8$Nov_Time1, breaks = 10)
+shapiro.test(week8$Nov_Time1)
+week8$log_size <- log(week8$Nov_Time1 + 1)
+shapiro.test(week8$log_size)
+hist(week8$log_size, breaks = 10)
+qqnorm(week8$log_size)
+qqline(week8$log_size)
+
+## Not likely to meet parametric assumptions. Will need to use the 
+#   Kruskal-Wallis with a correction
+
+week4_mod1 <- kruskal.test(Nov_Time1 ~ SampleID, data = week4)
+week4_mod1
+
+week8_mod1 <- kruskal.test(Nov_Time1 ~ SampleID, data = week8)
+week8_mod1
+
+week8$SampleID <- as.factor(week8$SampleID)
+dunn.test(week8$Nov_Time1, week8$SampleID, method = 'hochberg')
+
+f_labels <- data.frame(x = c(1, 1), y = c(-0.25, -0.25), 
+                       Time_elapsed = c('4 weeks', '8 weeks'), 
+                       label = c('sample', 
+                                 'sample2'))
+
+# 'chi^2(2) = 4.00, p = 0.136'
+# 'chi^2(2) = 17.11, p < 0.001'
+gamete2 <- dplyr::left_join(gamete, f_labels, by = 'Time_elapsed')
+
+p10 <- ggplot(gamete2, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) + 
+  geom_boxplot(outlier.size = 0.5) + facet_grid(.~Time_elapsed) + 
   theme(panel.background = element_blank(), axis.line = element_line(color = 'black'), 
-        axis.text = element_text(color = 'black', size = 6), legend.position = 'none', 
+        axis.text = element_text(color = 'black', size = 6, angle = 30, vjust = 0, hjust = 1), 
+        legend.position = 'none', 
         axis.title = element_text(size = 8)) +
   geom_hline(yintercept = 0, alpha = 0.5) + xlab('Treatment group') + 
-  ylab(expression(paste(Delta,' Surface area ', (cm)^2)))
+  ylab(expression(paste(Delta,' Surface area ', (cm)^2))) + 
+  geom_text(data = gamete2, aes(x = x, y = y, label = label))
+
+# Got this to work, now to remove the overplotting that occurs! 
 
 p10
 
-# Need to finish adjusting and adding stats annotations
-
-ggsave('../R/Figures/gamete_V1.pdf', width = s_w, height = s_h, units = 'in')
-
-
+ggsave('../R/Figures/gamete_V2.pdf', width = s_w, height = s_h, units = 'in')
 
 
 
