@@ -27,6 +27,28 @@ d_w = 6.00
 d_h = d_w*prop
 ### Figure height-width variables for Ecology (ESA)
 
+### Other mappings for figure consistency
+# outlier size
+outlier <- 0.5
+# annotation hjust
+hjust <- 'left'
+# annotation size
+size = 2
+
+### Custom themes
+theme_w_legend <- function () {
+  theme(axis.text = element_text(color = 'black', size = 6),
+        axis.line = element_line(color = 'black'),
+        axis.title = element_text(size = 8),
+        legend.key.height = unit(0.1, 'in'),
+        panel.background = element_blank(),
+        strip.text = element_text(size = rel(0.5)),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 5),
+        legend.margin = margin(l = 0, r = 0, unit = 'pt'),
+        legend.key.width = unit(0.1, unit = 'in'))
+}
+
 #1. Load files
 
 # OTU analysis:
@@ -828,34 +850,52 @@ f_labels <- data.frame(x = c(1, 1), y = c(-0.25, -0.25),
 
 # 'chi^2(2) = 4.00, p = 0.136'
 # 'chi^2(2) = 17.11, p < 0.001'
-gamete2 <- dplyr::left_join(gamete, f_labels, by = 'Time_elapsed')
-
-gamete2[31,7] <- 'sample2'
+# gamete2 <- dplyr::left_join(gamete, f_labels, by = 'Time_elapsed')
+# 
+# gamete2[31,7] <- 'sample2'
 
 gamete2 <- gamete
 gamete2[,5:7] <- NA
 newcols <- c("SampleID", "Nov_Time1", "Time_elapsed", "Sample_ID2", "X", "Y", "label")
 colnames(gamete2) = newcols
-gamete2[1,5] <- 1
-gamete2[31,5] <- 1
+gamete2[1,5] <- 1.50
+gamete2[31,5] <- 1.50
 gamete2[1,6] <- -0.25
 gamete2[31,6] <- -0.25
-gamete2[1,7] <- expression(paste('chi^2(2) = 4.00, p = 0.136'))
-gamete2[31,7] <- 'chi^2(2) = 17.11, p < 0.001'
+gamete2[1,7] <- '4.00, p = 0.136'
+gamete2[31,7] <- '17.11, p < 0.001'
 
-gamete2 <- gamete
-gamete2[31:60, 2] <- NA
+# Plot the post-hoc values:
+tapply(week8$Nov_Time1, week8$SampleID, summary)  # Figure out the value of the upper quartile
+gamete2[32,5] <- 1.1
+gamete2[33,5] <- 2.1
+gamete2[34,5] <- 3.1
+gamete2[32,6] <- 0.28
+gamete2[33,6] <- 0.34
+gamete2[34,6] <- 0.04
+gamete2[2,7] <- ' '
+gamete2[3,7] <- ' '
+gamete2[4,7] <- ' '
+gamete2[32,7] <- 'A'
+gamete2[33,7] <- 'A'
+gamete2[34,7] <- 'B'
+
+# gamete2 <- gamete
+# gamete2[31:60, 2] <- NA
 
 
 p10 <- ggplot(gamete2, aes(x=SampleID, y=Nov_Time1, fill = SampleID)) + 
   geom_boxplot(outlier.size = 0.5) + facet_grid(.~Time_elapsed) + 
   theme(panel.background = element_blank(), axis.line = element_line(color = 'black'), 
         axis.text = element_text(color = 'black', size = 6, angle = 30, vjust = 0, hjust = 1), 
-        legend.position = 'none', 
-        axis.title = element_text(size = 8)) +
+        legend.position = 'none', axis.title = element_text(size = 8), 
+        strip.text = element_text(size = rel(0.5))) +
   geom_hline(yintercept = 0, alpha = 0.5) + xlab('Treatment group') + 
   ylab(expression(paste(Delta,' Surface area ', (cm)^2))) + 
-  annotate('text', x = 1, y = -0.25, label = expression(paste(chi^2,'(2) = 4.00, p = 0.136')), hjust = 'left')
+  annotate('text', x = 0.75, y = -0.25, label = expression(paste(chi^2,'(2) = ')), 
+           hjust = 'left', size = 2) + 
+  annotate('text', x = 0.725, y = -0.18, label = 'Kruskal-Wallis', hjust = 'left', size = 2) + 
+  geom_text(data = gamete2, aes(x = X, y = Y, label = label), hjust = 'left', size = 2)
 
 # Okay, just use cowplot to get the separate plots together. Can I plot
 #   annotations after separately in the facets? Will have to see later. 
@@ -869,5 +909,36 @@ p10
 
 #ggsave('../R/Figures/gamete_V2.pdf', width = s_w, height = s_h, units = 'in')
 
+ggsave('../R/Figures/gamete_V3.pdf', width = s_w, height = s_h, units = 'in')
+
+# Competition assay plot
+
+comp1 <- read.csv('../Competition_assays/compiled_images.csv', header = TRUE)
+
+# Should plot the following:
+# - length:towards
+# - area:towards
+# - area:away
+
+tow_len <- filter(comp1, Direction == 'towards')
+awa_are <- filter(comp1, Direction == 'away')
+
+ggplot(tow_len, aes(x = Competitor, y = Length)) + geom_boxplot()
+ggplot(tow_len, aes(x = Competitor, y = Area)) + geom_boxplot()
+ggplot(awa_are, aes(x = Competitor, y = Area)) + geom_boxplot()
+
+# Will go with the length-towards analysis:
+
+p11 <- ggplot(tow_len, aes(x = Competitor, y = Length, fill = Competitor)) + 
+  geom_boxplot(outlier.size = 0.5) + scale_x_discrete(breaks = c("C","D","E","F","G","I","J","K","L","M","N"),
+                                    labels = c("A","B","C","D","E","F","G","H","I","J","K")) +
+  scale_fill_discrete(labels = c("A: Arthrinium arundinis","B: Pezicula sp.",
+                                 "C: Xylaria sp.","D: Diaporthe sp.","E: Colletotrichum sp.1",
+                                 "F: Hypoxylon rubiginosum","G: Colletotrichum sp.2","H: Phoma sp.",
+                                 "I: Plectania milleri","J: Fontanospora sp.","K: Pezicula sp.")) +
+  theme_brett() +
+  scale_y_continuous(name = "Difference in growth relative\nto C. polystichicola (cm)")
+
+ggsave('../R/Figures/comp_V1.pdf', width = s_w, height = s_h, units = 'in')
 
 
