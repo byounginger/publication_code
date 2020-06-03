@@ -46,7 +46,8 @@ theme_w_legend <- function () {
         legend.title = element_text(size = 8),
         legend.text = element_text(size = 5),
         legend.margin = margin(l = 0, r = 0, unit = 'pt'),
-        legend.key.width = unit(0.1, unit = 'in'))
+        legend.key.width = unit(0.1, unit = 'in'), 
+        legend.key = element_rect(fill = NA))
 }
 
 #1. Load files
@@ -205,7 +206,7 @@ set.seed(777)
 pseq_rare <- rarefy_even_depth(pseq_merge3, sample.size = 15000, replace = FALSE)
 # Lost 11 samples and 134 OTUs
 
-# Plot some rarefaction curves
+# Plot rarefaction curves
 
 #APR <- subset_samples(pseq_rare, Month == 'Apr')
 MAY <- subset_samples(pseq_rare, Month == 'May')
@@ -291,11 +292,14 @@ full_curve <- rbind(May_otu_sac_df, Jun_otu_sac_df, Jul_otu_sac_df, Aug_otu_sac_
 
 full_curve$month <- factor(full_curve$month, levels = c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
 
-p1 <- ggplot(full_curve, aes(x = plant, y = richness, colour = month)) + geom_line() + xlim(1,20)
-p1 + theme_classic() + xlab('Plants') + ylab('Richness') +
-  theme(legend.key.height = unit(0.1, 'in')) + scale_color_discrete('Months')
+p1 <- ggplot(full_curve, aes(x = plant, y = richness, colour = month)) + geom_line() + 
+  xlim(1,20) + theme_w_legend() + xlab('Plants') + ylab('Richness') +
+  scale_color_discrete('Months')
 
-ggsave('../R/Figures/rare_v1.pdf', width = s_w, height = s_h, units = 'in')
+p1
+
+# ggsave('../R/Figures/rare_v1.pdf', width = s_w, height = s_h, units = 'in')
+ggsave('../R/Figures/rare_v2.pdf', width = s_w, height = s_h, units = 'in')
 
 # Think instead I should set the xlim to 1 # Will work on this further at a later point
 # Also, April is really the outlier due to low sample sizes.
@@ -313,21 +317,27 @@ sample_data(pseq_rare_noApr)$Month <- factor(sample_data(pseq_rare_noApr)$Month,
 #                                        levels = c('Apr', 'May', 'Jun', 'Jul','Aug', 'Sep', 
 #                                                   'Oct', 'Nov', 'Dec', 'Jan'))
 
-p2 <- plot_ordination(pseq_rare_noApr, ordinate(pseq_rare_noApr, 'NMDS', distance = 'bray', trymax = 100), 
-                      'sites', color = 'Month', title = 'Stress = 0.15') +
-  stat_ellipse() + theme_classic()
-
 label1 <- c("PERMANOVA\nPseudo-F", "= 9.61 p < 0.001")
 
-p2 + annotate('text', x = -1.5, y = 2.4, hjust = 'left', 
-              label = expression(paste("Pseudo-",F['8,170']," = 9.61 p < 0.001"))) + 
-  annotate('text', x = -1.5, y = 2.6, hjust = 'left', label = "PERMANOVA") + 
-  annotate('text', x = -1.5, y = 2.0, hjust = 'left', label = "PERMDISP") + 
-  annotate('text', x = -1.5, y = 1.8, hjust = 'left',
-           label = expression(paste("Pseudo-",F['8,170']," = 33.33 p < 0.001")))
+p2 <- plot_ordination(pseq_rare_noApr, 
+                      ordinate(pseq_rare_noApr, 'NMDS', distance = 'bray', trymax = 100), 
+                      'sites', color = 'Month') + stat_ellipse() + theme_w_legend() +
+  geom_point(size = 0.5)
+
+p2 +
+  annotate('text', x = -1.5, y = 2.4, hjust = hjust, size = size,
+           label = expression(paste("Pseudo-",F['8,170']," = 9.61 p < 0.001"))) + 
+  annotate('text', x = -1.5, y = 2.55, hjust = hjust, size = size, label = "PERMANOVA") + 
+  annotate('text', x = -1.5, y = 2.05, hjust = hjust, size = size, label = "PERMDISP") + 
+  annotate('text', x = -1.5, y = 1.9, hjust = hjust, size = size,
+           label = expression(paste("Pseudo-",F['8,170']," = 33.33 p < 0.001"))) + 
+  annotate('text', x = -1.5, y = 2.8, hjust = hjust, size = size, 
+           fontface = 'bold', label = "Stress = 0.15")
 
 ## ggsave('../R/Figures/ord_v1.pdf', width = d_w, height = d_h, units = 'in')
 ## ggsave('../R/Figures/ord_v2.pdf', width = d_w, height = d_h, units = 'in')
+ggsave('../R/Figures/ord_v3.pdf', width = h_w, height = h_h, units = 'in')
+## Still need to get the geom_point size adjusted! 
 
 ## PERMANOVA
 
@@ -461,13 +471,14 @@ set.seed(777)
 pseq_mocks_rare <- rarefy_even_depth(pseq_merge_mocks, sample.size = 2996, 
                                      replace = FALSE)
 
-p3 <- plot_ordination(pseq_mocks_rare, ordinate(pseq_mocks_rare, 'NMDS', distance = 'bray', trymax = 100), 
-                      'sites', color = 'Month', title = 'Stress = 0.11') +
-  stat_ellipse() + theme_classic()
+p3 <- plot_ordination(pseq_mocks_rare, ordinate(pseq_mocks_rare, 'NMDS', 
+                                                distance = 'bray', trymax = 100), 
+                      'sites', color = 'Month') + stat_ellipse() + theme_w_legend()
 
-p3 
+p3 + annotate('text', x = 0, y = -3, hjust = hjust, size = size, fontface = 'bold', 
+              label = 'Stress = 0.11')
 
-ggsave('../R/Figures/ord_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+ggsave('../R/Figures/ord_supp_v2.pdf', width = h_w, height = h_h, units = 'in')
 
 ### 2020/05/08
 ## Working on getting everything organized and analyzed again 
@@ -516,12 +527,12 @@ wp_rare <- rarefy_even_depth(wp_pseq, sample.size = 5000, replace = FALSE)
 
 # Ordination:
 
-p1 <- plot_ordination(wp_rare, ordinate(wp_rare, 'PCoA', distance = 'bray', trymax = 100), 
-                      'sites', color = 'Plant_compartment') + stat_ellipse() + theme_classic()
+p4 <- plot_ordination(wp_rare, ordinate(wp_rare, 'PCoA', distance = 'bray', trymax = 100), 
+                      'sites', color = 'Plant_compartment') + stat_ellipse() + theme_w_legend()
 
-p1
+p4
 
-ggsave('../R/Figures/wp_ord_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+ggsave('../R/Figures/wp_ord_supp_v2.pdf', width = h_w, height = h_h, units = 'in')
 
 # # Rhizome is different, not much else
 # library('PCDimension') # Use this for broken stick calcs
@@ -531,23 +542,24 @@ ggsave('../R/Figures/wp_ord_supp_v1.pdf', width = d_w, height = d_h, units = 'in
 wp_ra <- transform_sample_counts(wp_rare, function(x) x/20000)
 wp_filt <- filter_taxa(wp_ra, function(x) mean(x) > 1e-3, prune = TRUE)
 
-p2 <- plot_bar(wp_filt, 'Class', fill = 'Genus')
-p2 + geom_bar(aes(color = Genus, fill = Genus), stat = 'identity',
+p5 <- plot_bar(wp_filt, 'Class', fill = 'Genus')
+p5 + geom_bar(aes(color = Genus, fill = Genus), stat = 'identity',
               position = 'stack') + ylab('Relative abundance') + 
-  theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
-  panel.background = element_blank(), axis.line = 
-    element_line(colour = "black"), legend.key.height = unit(0.1, 'in')) + 
+  theme_w_legend() + theme(axis.text.x = element_text(angle = 45, hjust = 1, 
+                                                      vjust = 1)) +
   facet_wrap(~ Plant_compartment, ncol = 3, nrow = 1)
 
-ggsave('../R/Figures/wp_tax_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+ggsave('../R/Figures/wp_tax_supp_v2.pdf', width = h_w, height = h_h, units = 'in')
 
-
+# theme(axis.text.x = element_text(angle=45, hjust=1, vjust=1), 
+#       panel.background = element_blank(), axis.line = 
+#         element_line(colour = "black"), legend.key.height = unit(0.1, 'in'))
 
 # Will adjust some more later
 
-tax_table(subset_taxa(wp_rare, Genus %in% 'Derxomyces'))
-tax_table(subset_taxa(wp_rare, Genus %in% 'Tremella'))
-tax_table(subset_taxa(wp_rare, Genus %in% 'Hymenoscyphus'))
+# tax_table(subset_taxa(wp_rare, Genus %in% 'Derxomyces'))
+# tax_table(subset_taxa(wp_rare, Genus %in% 'Tremella'))
+# tax_table(subset_taxa(wp_rare, Genus %in% 'Hymenoscyphus'))
 
 # Alpha diversity plots with hill numbers
 
@@ -567,9 +579,11 @@ hill2['Compartment'] <- mapvalues(hill2$Compartment, from = c("Le", "Ra", "Rh"),
           to = c("Leaf", "Rachis", "Rhizome"))
 
 
-p3 <- ggplot(hill2, aes(x=Compartment, y=Hill_value, fill=Compartment)) +
+p6 <- ggplot(hill2, aes(x=Compartment, y=Hill_value, fill=Compartment)) +
   geom_boxplot() + facet_grid(Hill_number ~., scales = 'free_y')
-p3
+p6
+
+## ######Don't include this plot ^^^^^^ ??? #######
 
 # Stats
 hill_num2 <- subset(hill2, Hill_number == 0)
@@ -635,33 +649,37 @@ hill$Month <- factor(hill$Month,
                                 'Oct', 'Nov', 'Dec', 'Jan'))
 
 p6 <- ggplot(hill, aes(x = Month, y = Hill_value, fill = Month)) + 
-  geom_boxplot() + facet_grid(Hill_number ~., scales = 'free_y', 
-                              labeller = as_labeller(c('zero'='Richness (OTUs)', 
-                                                       'one'= 'Exp. Shannon\n Entropy', 
-                                                       'two'='Inv. Simpson\n Index'))) +
-  theme_classic() + 
-  theme(legend.position = 'none', axis.text = element_text(size = 12, color = 'black'), 
-        strip.text = element_text(size = 10), axis.title = element_text(size = 12), 
-        axis.line = element_line(color = 'black'))
+  geom_boxplot(outlier.size = outlier) + ylab('Hill value') +
+  facet_grid(Hill_number ~., scales = 'free_y', 
+             labeller = as_labeller(c('zero'='Richness (OTUs)', 
+                                      'one'= 'Exp. Shannon\n Entropy', 
+                                      'two'='Inv. Simpson\n Index'))) +
+  theme_w_legend() + theme(legend.position = 'none')
 
 p6
 
-## ggsave('../R/Figures/hill_supp_v1.pdf', width = d_w, height = d_h, units = 'in')
+ggsave('../R/Figures/hill_supp_v2.pdf', width = h_w, height = h_h, units = 'in')
 # The above is the supplemental figure
+
+
+##########
+##########
+#########
+#########
 
 hill2 <- subset(hill, Hill_number == 'zero')
 
-p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + geom_boxplot() + 
-  theme_classic() + theme(legend.position = 'none', 
-                          axis.text = element_text(color = 'black')) + 
-  ylab('Richness (OTUs)')
-
-p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated measures ANOVA', size = 3) + 
-  annotate('text', x = 3, y = 85, hjust = 'left', size = 3, 
-           label = expression(paste(F["8,144"]," = 103.5, p < 0.001")))
-
-## ggsave('../R/Figures/hill_v1.pdf', width = s_w, height = s_h, units = 'in')
-ggsave('../R/Figures/hill_v2.pdf', width = s_w, height = s_h, units = 'in')
+# p7 <- ggplot(hill2, aes(x = Month, y = Hill_value, fill = Month)) + 
+#   geom_boxplot(outlier.size = outlier) + 
+#   theme_w_legend() + theme(legend.position = 'none') + 
+#   ylab('Richness (OTUs)')
+# 
+# p7 + annotate('text', x = 3, y = 100, hjust = 'left', label = 'Repeated measures ANOVA', size = 3) + 
+#   annotate('text', x = 3, y = 85, hjust = 'left', size = 3, 
+#            label = expression(paste(F["8,144"]," = 103.5, p < 0.001")))
+# 
+# ## ggsave('../R/Figures/hill_v1.pdf', width = s_w, height = s_h, units = 'in')
+##ggsave('../R/Figures/hill_v2.pdf', width = s_w, height = s_h, units = 'in')
 ## Stats on alpha diversity
 
 hillaov <- aov(Hill_value ~ Month + Error(Plant/Month), data = hill2)
