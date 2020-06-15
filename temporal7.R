@@ -66,6 +66,9 @@ hjust <- 'left'
 # annotation size
 size = 2
 
+# Names of months for placing month factors in order
+months <- c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan')
+
 # Custom theme
 theme_w_legend <- function () {
   theme(axis.text = element_text(color = 'black', size = 6),
@@ -313,7 +316,7 @@ Jan_otu_sac_df$month <- 'Jan'
 full_curve <- rbind(May_otu_sac_df, Jun_otu_sac_df, Jul_otu_sac_df, Aug_otu_sac_df, Sep_otu_sac_df, Oct_otu_sac_df, Nov_otu_sac_df, Dec_otu_sac_df, Jan_otu_sac_df)
 
 # Put months in order
-full_curve$month <- factor(full_curve$month, levels = c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'))
+full_curve$month <- factor(full_curve$month, levels = months)
 
 p1 <- ggplot(full_curve, aes(x = plant, y = richness, colour = month)) + geom_line() + 
   xlim(1,20) + theme_w_legend() + xlab('Plants') + ylab('Richness')
@@ -342,8 +345,7 @@ hill$Hill_number <- mapvalues(hill$Hill_number, from = c(0,1,2),
 
 # Put months in order
 hill$Month <- factor(hill$Month, 
-                     levels = c('May', 'Jun', 'Jul', 'Aug', 'Sep', 
-                                'Oct', 'Nov', 'Dec', 'Jan'))
+                     levels = months)
 
 # Plot Hill numbers q = 0,1,2 (for supplemental)
 p2 <- ggplot(hill, aes(x = Month, y = Hill_value, fill = Month)) + 
@@ -432,8 +434,7 @@ p3
 
 # Put months in order
 sample_data(pseq_rare_noApr)$Month <- factor(sample_data(pseq_rare_noApr)$Month,
-                                             levels = c('May', 'Jun', 'Jul','Aug', 'Sep',
-'Oct', 'Nov', 'Dec', 'Jan'))
+                                             levels = months)
 
 p4 <- plot_ordination(pseq_rare_noApr, 
                       ordinate(pseq_rare_noApr, 'NMDS', distance = 'bray', trymax = 100), 
@@ -467,9 +468,7 @@ pseq_rel <- transform_sample_counts(pseq_rare_noApr, function(x) x/3e+05)
 
 # Put months in order
 sample_data(pseq_rel)$Month <- factor(sample_data(pseq_rel)$Month, 
-                                      levels = c('May', 'Jun', 'Jul',
-                                                 'Aug', 'Sep', 'Oct',
-                                                 'Nov', 'Dec', 'Jan'))
+                                      levels = months)
 
 # Supplemental plot without filtering
 p5 <- plot_bar(pseq_rel, x = 'Class', fill = 'Genus')
@@ -675,8 +674,8 @@ pseq_merge_mocks <- subset_samples(pseq_merge_mocks, Month != 'Apr')
 
 # Put months in order
 sample_data(pseq_merge_mocks)$Month <- factor(sample_data(pseq_merge_mocks)$Month, levels = 
-                                                c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov',
-                                                  'Dec', 'Jan', 'mock'))
+                                              c('May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 
+                                                'Nov', 'Dec', 'Jan', 'mock'))
 
 # Rarefy to even depth
 sort(sample_sums(pseq_merge_mocks))
@@ -693,7 +692,7 @@ p9 <- plot_ordination(pseq_mocks_rare, ordinate(pseq_mocks_rare, 'NMDS',
 p9 + annotate('text', x = 0, y = -3, hjust = hjust, size = size, fontface = 'bold', 
               label = 'Stress = 0.11')
 
-#ggsave('ord_supp_v2.pdf', width = h_w, height = h_h, units = 'in')
+# ggsave('ord_supp_v2.pdf', width = h_w, height = h_h, units = 'in')
 
 ##########
 # 12. Within-plant analysis
